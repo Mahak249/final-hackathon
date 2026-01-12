@@ -1,0 +1,182 @@
+# CLI Command Contracts
+
+This document defines the command contracts for the Phase I Todo App CLI interface.
+
+## Command: add
+
+Adds a new task to the todo list.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| description | string | Yes | Task description (1-500 chars, non-whitespace) |
+
+### Output
+
+Success:
+```
+Task added! (ID: {id})
+```
+
+Error:
+```
+Error: Task description cannot be empty.
+Error: Task description cannot be whitespace only.
+Error: Task description must be 500 characters or less.
+```
+
+---
+
+## Command: list
+
+Displays all tasks in the todo list.
+
+### Input
+
+None (no parameters required)
+
+### Output
+
+If tasks exist:
+```
+[ ] 1. {description}
+[ ] 2. {description}
+[X] 3. {description}
+```
+
+If empty:
+```
+No tasks yet.
+```
+
+---
+
+## Command: update
+
+Updates an existing task's description.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| id | integer | Yes | Task ID to update |
+| description | string | Yes | New description (1-500 chars, non-whitespace) |
+
+### Output
+
+Success:
+```
+Task {id} updated!
+```
+
+Error (invalid ID):
+```
+Error: Please enter a valid number.
+Error: Task with ID {id} not found.
+```
+
+Error (invalid description):
+```
+Error: Task description cannot be empty.
+Error: Task description cannot be whitespace only.
+```
+
+---
+
+## Command: delete
+
+Deletes a task from the todo list.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| id | integer | Yes | Task ID to delete |
+
+### Output
+
+Success:
+```
+Task {id} deleted!
+```
+
+Error:
+```
+Error: Please enter a valid number.
+Error: Task with ID {id} not found.
+Error: No tasks to delete.
+```
+
+---
+
+## Command: complete
+
+Marks a task as complete.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| id | integer | Yes | Task ID to mark complete |
+
+### Output
+
+Success:
+```
+Task {id} marked as complete!
+```
+
+Error:
+```
+Error: Please enter a valid number.
+Error: Task with ID {id} not found.
+Error: Task {id} is already complete.
+```
+
+---
+
+## Command: incomplete
+
+Marks a task as incomplete.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| id | integer | Yes | Task ID to mark incomplete |
+
+### Output
+
+Success:
+```
+Task {id} marked as incomplete!
+```
+
+Error:
+```
+Error: Please enter a valid number.
+Error: Task with ID {id} not found.
+Error: Task {id} is already incomplete.
+```
+
+---
+
+## Error Response Format
+
+All errors follow this format:
+
+```
+Error: {message}
+```
+
+- Errors are displayed to stderr
+- Error messages are user-friendly (no technical jargon)
+- Application continues running after error display
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Successful exit (user selected option 7) |
+| 1 | Error condition (should not occur in normal use) |

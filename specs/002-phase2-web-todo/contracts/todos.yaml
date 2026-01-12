@@ -1,0 +1,324 @@
+openapi: 3.0.3
+info:
+  title: Todo App Todos API
+  version: 1.0.0
+  description: REST API for todo CRUD operations
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+
+security:
+  - sessionCookie: []
+
+paths:
+  /api/todos:
+    get:
+      summary: List all todos
+      description: Returns all todos for the authenticated user
+      tags:
+        - Todos
+      responses:
+        '200':
+          description: List of todos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoListResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Create a todo
+      description: Creates a new todo for the authenticated user
+      tags:
+        - Todos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoCreateRequest'
+      responses:
+        '201':
+          description: Todo created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/todos/{todo_id}:
+    get:
+      summary: Get a todo
+      description: Returns a specific todo by ID (must belong to authenticated user)
+      tags:
+        - Todos
+      parameters:
+        - name: todo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Todo ID
+      responses:
+        '200':
+          description: Todo details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoResponse'
+        '404':
+          description: Todo not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      summary: Update a todo
+      description: Updates an existing todo (must belong to authenticated user)
+      tags:
+        - Todos
+      parameters:
+        - name: todo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoUpdateRequest'
+      responses:
+        '200':
+          description: Todo updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Todo not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete a todo
+      description: Deletes a todo (must belong to authenticated user)
+      tags:
+        - Todos
+      parameters:
+        - name: todo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Todo deleted (no content)
+        '404':
+          description: Todo not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/todos/{todo_id}/toggle:
+    patch:
+      summary: Toggle todo completion
+      description: Toggles the completion status of a todo
+      tags:
+        - Todos
+      parameters:
+        - name: todo_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TodoToggleRequest'
+      responses:
+        '200':
+          description: Todo toggled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Todo not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    TodoCreateRequest:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          example: "Buy groceries"
+          description: Todo title (required)
+        description:
+          type: string
+          maxLength: 10000
+          nullable: true
+          example: "Milk, eggs, bread"
+          description: Optional todo description
+
+    TodoUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+          nullable: true
+        description:
+          type: string
+          maxLength: 10000
+          nullable: true
+
+    TodoToggleRequest:
+      type: object
+      required:
+        - completed
+      properties:
+        completed:
+          type: boolean
+          example: true
+          description: New completion status
+
+    TodoResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        user_id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        title:
+          type: string
+          example: "Buy groceries"
+        description:
+          type: string
+          nullable: true
+          example: "Milk, eggs, bread"
+        completed:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-12-31T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-12-31T10:30:00Z"
+
+    TodoListResponse:
+      type: object
+      properties:
+        todos:
+          type: array
+          items:
+            $ref: '#/components/schemas/TodoResponse'
+        total:
+          type: integer
+          example: 5
+          description: Total number of todos
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Validation failed"
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: "title"
+              message:
+                type: string
+                example: "Title is required"
+
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session
