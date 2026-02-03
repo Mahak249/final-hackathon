@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "command",
+        model: "command-a-03-2025",
         message: message,
         chat_history: formattedHistory,
         preamble: `You are TaskFlow AI, a helpful assistant for a todo/task management application.
