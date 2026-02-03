@@ -3,8 +3,8 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: "Todo App",
-  description: "A simple todo application",
+  title: "TaskFlow - Simple & Beautiful Todo App",
+  description: "Stay organized and productive with TaskFlow. Manage your tasks effortlessly.",
 };
 
 export default function RootLayout({

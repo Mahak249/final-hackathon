@@ -34,7 +34,7 @@ Output Format:
 # apart from conversation history which is handled by the Runner/Session.
 
 def get_todo_agent() -> Agent:
-    """Returns the configured Todo Agent."""
+    """Returns the configured Todo Agent using Groq."""
     return Agent(
         name="TodoAssistant",
         instructions=INSTRUCTIONS,
@@ -44,5 +44,5 @@ def get_todo_agent() -> Agent:
             function_tool(update_todo),
             function_tool(delete_todo),
         ],
-        model="gpt-4o-mini", # Cost-effective default
+        model="llama-3.3-70b-versatile",  # Groq's free tier model
     )

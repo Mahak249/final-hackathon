@@ -2,7 +2,8 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 import bcrypt
 from jose import jwt
 import os
@@ -19,7 +20,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440
 class AuthService:
     """Service for authentication operations."""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
 
     def hash_password(self, password: str) -> str:
@@ -30,10 +31,11 @@ class AuthService:
         """Verify a password against its hash."""
         return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
-    def create_user(self, user_data: UserCreate) -> User:
+    async def create_user(self, user_data: UserCreate) -> User:
         """Create a new user with hashed password."""
         # Check if user exists
-        existing = self.db.query(User).filter(User.email == user_data.email).first()
+        result = await self.db.execute(select(User).where(User.email == user_data.email))
+        existing = result.scalar_one_or_none()
         if existing:
             raise ValueError("Email already registered")
 
@@ -43,13 +45,14 @@ class AuthService:
             password_hash=self.hash_password(user_data.password),
         )
         self.db.add(user)
-        self.db.commit()
-        self.db.refresh(user)
+        await self.db.commit()
+        await self.db.refresh(user)
         return user
 
-    def authenticate_user(self, email: str, password: str) -> Optional[User]:
+    async def authenticate_user(self, email: str, password: str) -> Optional[User]:
         """Authenticate a user by email and password."""
-        user = self.db.query(User).filter(User.email == email).first()
+        result = await self.db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
         if not user:
             return None
         if not self.verify_password(password, user.password_hash):
@@ -81,9 +84,10 @@ class AuthService:
         except jwt.JWTError:
             return None
 
-    def get_user_by_id(self, user_id: str) -> Optional[User]:
+    async def get_user_by_id(self, user_id: str) -> Optional[User]:
         """Get a user by ID."""
-        return self.db.query(User).filter(User.id == user_id).first()
+        result = await self.db.execute(select(User).where(User.id == user_id))
+        return result.scalar_one_or_none()
 
     def get_user_response(self, user: User) -> UserResponse:
         """Convert User model to UserResponse schema."""

@@ -2,7 +2,8 @@
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy import select, desc
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.todo import Todo
 from src.schemas.todo import TodoCreate, TodoUpdate, TodoResponse, TodoListResponse
@@ -11,27 +12,30 @@ from src.schemas.todo import TodoCreate, TodoUpdate, TodoResponse, TodoListRespo
 class TodoService:
     """Service for todo operations."""
 
-    def __init__(self, db: Session, user_id: str):
+    def __init__(self, db: AsyncSession, user_id: str):
         self.db = db
         self.user_id = user_id
 
-    def get_todos(self) -> List[Todo]:
+    async def get_todos(self) -> List[Todo]:
         """Get all todos for the current user."""
-        return (
-            self.db.query(Todo)
-            .filter(Todo.user_id == self.user_id)
-            .order_by(Todo.created_at.desc())
-            .all()
+        result = await self.db.execute(
+            select(Todo)
+            .where(Todo.user_id == self.user_id)
+            .order_by(desc(Todo.created_at))
         )
+        return list(result.scalars().all())
 
-    def get_todo(self, todo_id: str) -> Optional[Todo]:
+    async def get_todo(self, todo_id: str) -> Optional[Todo]:
         """Get a specific todo by ID, verifying ownership."""
-        todo = self.db.query(Todo).filter(Todo.id == todo_id).first()
+        result = await self.db.execute(
+            select(Todo).where(Todo.id == todo_id)
+        )
+        todo = result.scalar_one_or_none()
         if todo and todo.user_id == self.user_id:
             return todo
         return None
 
-    def create_todo(self, todo_data: TodoCreate) -> Todo:
+    async def create_todo(self, todo_data: TodoCreate) -> Todo:
         """Create a new todo for the current user."""
         todo = Todo(
             user_id=self.user_id,
@@ -39,13 +43,13 @@ class TodoService:
             description=todo_data.description,
         )
         self.db.add(todo)
-        self.db.commit()
-        self.db.refresh(todo)
+        await self.db.commit()
+        await self.db.refresh(todo)
         return todo
 
-    def update_todo(self, todo_id: str, todo_data: TodoUpdate) -> Optional[Todo]:
+    async def update_todo(self, todo_id: str, todo_data: TodoUpdate) -> Optional[Todo]:
         """Update a todo, verifying ownership."""
-        todo = self.get_todo(todo_id)
+        todo = await self.get_todo(todo_id)
         if not todo:
             return None
 
@@ -55,30 +59,30 @@ class TodoService:
             setattr(todo, field, value)
 
         todo.updated_at = datetime.utcnow()
-        self.db.commit()
-        self.db.refresh(todo)
+        await self.db.commit()
+        await self.db.refresh(todo)
         return todo
 
-    def delete_todo(self, todo_id: str) -> bool:
+    async def delete_todo(self, todo_id: str) -> bool:
         """Delete a todo, verifying ownership."""
-        todo = self.get_todo(todo_id)
+        todo = await self.get_todo(todo_id)
         if not todo:
             return False
 
-        self.db.delete(todo)
-        self.db.commit()
+        await self.db.delete(todo)
+        await self.db.commit()
         return True
 
-    def toggle_todo(self, todo_id: str, completed: bool) -> Optional[Todo]:
+    async def toggle_todo(self, todo_id: str, completed: bool) -> Optional[Todo]:
         """Toggle todo completion status."""
-        todo = self.get_todo(todo_id)
+        todo = await self.get_todo(todo_id)
         if not todo:
             return None
 
         todo.completed = completed
         todo.updated_at = datetime.utcnow()
-        self.db.commit()
-        self.db.refresh(todo)
+        await self.db.commit()
+        await self.db.refresh(todo)
         return todo
 
     def to_response(self, todo: Todo) -> TodoResponse:

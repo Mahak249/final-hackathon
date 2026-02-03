@@ -1,25 +1,27 @@
 """FastAPI application entry point."""
 import os
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+
+# Load .env first
+load_dotenv()  # .env should be in the same folder as main.py or adjust path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.database import init_db
+from src.database import init_db, close_db  # async DB functions
 from src.api.routes import auth, todos, chat
-from src.mcp.server import mcp
+# from src.mcp.server import mcp  # Uncomment if you use MCP
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
     """Application lifespan handler."""
-    # Startup
-    init_db()
+    await init_db()
     yield
-    # Shutdown
+    await close_db()
 
 
-# Create FastAPI application
+# Create FastAPI app
 app = FastAPI(
     title="Todo API",
     description="REST API for the Todo application",
@@ -29,7 +31,6 @@ app = FastAPI(
 
 # CORS configuration
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
@@ -43,27 +44,15 @@ app.include_router(auth.router)
 app.include_router(todos.router)
 app.include_router(chat.router)
 
-# Mount MCP Server (this enables SSE transport at /sse)
-# mcp.mount_to_fastapi(app, path="/sse")
-# TODO: FastMCP 1.2.0 does not support mount_to_fastapi. Need to implement custom SSE adapter.
-
-
-
-
+# Health check
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
     return {"status": "healthy"}
 
-
+# Root endpoint
 @app.get("/")
 async def root():
-    """Root endpoint with API information."""
-    return {
-        "name": "Todo API",
-        "version": "1.0.0",
-        "docs": "/docs",
-    }
+    return {"name": "Todo API", "version": "1.0.0", "docs": "/docs"}
 
 
 if __name__ == "__main__":
@@ -72,9 +61,4 @@ if __name__ == "__main__":
     host = os.getenv("BACKEND_HOST", "127.0.0.1")
     port = int(os.getenv("BACKEND_PORT", "8000"))
 
-    uvicorn.run(
-        "main:app",
-        host=host,
-        port=port,
-        reload=True,
-    )
+    uvicorn.run("src.main:app", host=host, port=port, reload=True)

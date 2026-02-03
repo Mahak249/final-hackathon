@@ -1,11 +1,17 @@
+# Set Groq as the provider BEFORE any SDK imports
+import os
+# API key should be set via environment variable GROQ_API_KEY
+os.environ["OPENAI_API_KEY"] = os.getenv("GROQ_API_KEY", "")
+os.environ["OPENAI_BASE_URL"] = "https://api.groq.com/openai/v1"
+
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from pydantic import BaseModel
-from sqlmodel import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from agents import Runner
 
-from src.database import get_db
+from src.database import get_async_db
 from src.api.deps import get_current_user_from_cookie
 from src.models.user import User
 from src.agents.todo_agent import get_todo_agent
@@ -25,7 +31,7 @@ class ChatResponse(BaseModel):
 async def chat_endpoint(
     request: ChatRequest,
     current_user: User = Depends(get_current_user_from_cookie),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ):
     """
     Process a chat message using the AI Agent.
@@ -51,16 +57,11 @@ async def chat_endpoint(
     # The SDK's Runner.run_async allows passing `context_variables`.
     ctx_vars = {"user_id": current_user.id}
 
-    # 4. Run Agent
-    # Note: Runner.run_async is the main entry point
+    # 4. Run Agent using Runner.run() for async execution
     try:
-        # We assume the SDK supports this high level helper.
-        # if not, we use the `Runner` object manually.
-        result = await Runner.run_async(
-            agent=agent,
-            initial_message=request.message,
-            session=storage,
-            context_variables=ctx_vars
+        result = await Runner.run(
+            starting_agent=agent,
+            input=request.message,
         )
     except Exception as e:
         # Log error in real app

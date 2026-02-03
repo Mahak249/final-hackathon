@@ -1,17 +1,17 @@
 """API dependencies for dependency injection."""
-from typing import Generator, Optional
+from typing import Optional
 
 from fastapi import Depends, HTTPException, status, Request
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database import get_db
+from src.database import get_async_db
 from src.services.auth import AuthService
 from src.models.user import User
 
 
 async def get_current_user(
     token: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_db)
 ) -> User:
     """Dependency to get the current authenticated user from JWT token."""
     if not token:
@@ -44,7 +44,7 @@ async def get_current_user(
 
 async def get_current_user_from_cookie(
     request: Request,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_async_db)
 ) -> User:
     """Dependency to get the current authenticated user from cookie."""
     print(f"DEBUG: Headers: {request.headers}")
@@ -70,6 +70,6 @@ async def get_current_user_from_cookie(
     return await get_current_user(token, db)
 
 
-def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
+async def get_auth_service(db: AsyncSession = Depends(get_async_db)) -> AuthService:
     """Dependency to get AuthService instance."""
     return AuthService(db)

@@ -2,9 +2,9 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database import get_db
+from src.database import get_async_db
 from src.services.auth import AuthService
 from src.services.todo import TodoService
 from src.schemas.todo import TodoCreate, TodoUpdate, TodoToggle, TodoResponse, TodoListResponse
@@ -14,7 +14,7 @@ from src.api.routes.auth import extract_token_from_request
 router = APIRouter(prefix="/api/todos", tags=["Todos"])
 
 
-def get_current_user_id(request: Request, db: Session) -> str:
+async def get_current_user_id(request: Request, db: AsyncSession) -> str:
     """Get the current authenticated user's ID from the request."""
     token = extract_token_from_request(request)
 
@@ -41,12 +41,12 @@ def get_current_user_id(request: Request, db: Session) -> str:
 @router.get("", response_model=TodoListResponse)
 async def list_todos(
     request: Request,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ):
     """Get all todos for the current user."""
-    user_id = get_current_user_id(request, db)
+    user_id = await get_current_user_id(request, db)
     service = TodoService(db, user_id)
-    todos = service.get_todos()
+    todos = await service.get_todos()
     return service.to_list_response(todos)
 
 
@@ -54,12 +54,12 @@ async def list_todos(
 async def get_todo(
     todo_id: str,
     request: Request,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ):
     """Get a specific todo by ID."""
-    user_id = get_current_user_id(request, db)
+    user_id = await get_current_user_id(request, db)
     service = TodoService(db, user_id)
-    todo = service.get_todo(todo_id)
+    todo = await service.get_todo(todo_id)
 
     if not todo:
         raise HTTPException(
@@ -74,12 +74,12 @@ async def get_todo(
 async def create_todo(
     todo_data: TodoCreate,
     request: Request,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ):
     """Create a new todo."""
-    user_id = get_current_user_id(request, db)
+    user_id = await get_current_user_id(request, db)
     service = TodoService(db, user_id)
-    todo = service.create_todo(todo_data)
+    todo = await service.create_todo(todo_data)
     return service.to_response(todo)
 
 
@@ -88,12 +88,12 @@ async def update_todo(
     todo_id: str,
     todo_data: TodoUpdate,
     request: Request,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ):
     """Update an existing todo."""
-    user_id = get_current_user_id(request, db)
+    user_id = await get_current_user_id(request, db)
     service = TodoService(db, user_id)
-    todo = service.update_todo(todo_id, todo_data)
+    todo = await service.update_todo(todo_id, todo_data)
 
     if not todo:
         raise HTTPException(
@@ -108,13 +108,13 @@ async def update_todo(
 async def delete_todo(
     todo_id: str,
     request: Request,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ):
     """Delete a todo."""
-    user_id = get_current_user_id(request, db)
+    user_id = await get_current_user_id(request, db)
     service = TodoService(db, user_id)
 
-    if not service.delete_todo(todo_id):
+    if not await service.delete_todo(todo_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Todo not found",
@@ -126,12 +126,12 @@ async def toggle_todo(
     todo_id: str,
     toggle_data: TodoToggle,
     request: Request,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ):
     """Toggle todo completion status."""
-    user_id = get_current_user_id(request, db)
+    user_id = await get_current_user_id(request, db)
     service = TodoService(db, user_id)
-    todo = service.toggle_todo(todo_id, toggle_data.completed)
+    todo = await service.toggle_todo(todo_id, toggle_data.completed)
 
     if not todo:
         raise HTTPException(

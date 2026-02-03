@@ -2,9 +2,9 @@
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database import get_db
+from src.database import get_async_db
 from src.services.auth import AuthService
 from src.schemas.user import UserCreate, UserSignin, UserResponse, TokenResponse
 from src.api.deps import get_auth_service
@@ -31,13 +31,13 @@ def extract_token_from_request(request: Request) -> str | None:
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def signup(
     user_data: UserCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ):
     """Register a new user account."""
     auth_service = AuthService(db)
 
     try:
-        user = auth_service.create_user(user_data)
+        user = await auth_service.create_user(user_data)
         return auth_service.get_user_response(user)
     except ValueError as e:
         raise HTTPException(
@@ -50,12 +50,12 @@ async def signup(
 async def signin(
     credentials: UserSignin,
     response: Response,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ):
     """Authenticate a user and create a session."""
     auth_service = AuthService(db)
 
-    user = auth_service.authenticate_user(credentials.email, credentials.password)
+    user = await auth_service.authenticate_user(credentials.email, credentials.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -98,7 +98,7 @@ async def signout(
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(
     request: Request,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ):
     """Get the current authenticated user's information."""
     token = extract_token_from_request(request)
@@ -120,7 +120,7 @@ async def get_current_user_info(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    user = auth_service.get_user_by_id(user_id)
+    user = await auth_service.get_user_by_id(user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

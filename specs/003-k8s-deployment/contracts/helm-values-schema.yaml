@@ -1,0 +1,240 @@
+# Helm Values Schema for Todo Application
+# This schema defines the contract for Helm chart values
+
+---
+# Backend Chart Values Schema
+backend:
+  type: object
+  required:
+    - replicaCount
+    - image
+    - service
+    - probes
+  properties:
+    replicaCount:
+      type: integer
+      default: 1
+      description: Number of backend pod replicas
+
+    image:
+      type: object
+      required:
+        - repository
+        - tag
+      properties:
+        repository:
+          type: string
+          default: todo-backend
+          description: Docker image repository
+        tag:
+          type: string
+          default: latest
+          description: Docker image tag
+        pullPolicy:
+          type: string
+          enum: [Always, IfNotPresent, Never]
+          default: IfNotPresent
+
+    service:
+      type: object
+      required:
+        - type
+        - port
+      properties:
+        type:
+          type: string
+          enum: [ClusterIP, NodePort, LoadBalancer]
+          default: ClusterIP
+        port:
+          type: integer
+          default: 8000
+        targetPort:
+          type: integer
+          default: 8000
+
+    probes:
+      type: object
+      properties:
+        liveness:
+          type: object
+          properties:
+            path:
+              type: string
+              default: /health
+            initialDelaySeconds:
+              type: integer
+              default: 10
+            periodSeconds:
+              type: integer
+              default: 30
+        readiness:
+          type: object
+          properties:
+            path:
+              type: string
+              default: /health
+            initialDelaySeconds:
+              type: integer
+              default: 5
+            periodSeconds:
+              type: integer
+              default: 10
+
+    env:
+      type: object
+      description: Environment variables from ConfigMap
+      properties:
+        CORS_ORIGINS:
+          type: string
+          default: http://todo-frontend:3000
+        BACKEND_HOST:
+          type: string
+          default: "0.0.0.0"
+        BACKEND_PORT:
+          type: string
+          default: "8000"
+
+    secrets:
+      type: object
+      description: Secret references
+      properties:
+        existingSecret:
+          type: string
+          default: todo-secrets
+          description: Name of existing Kubernetes secret
+
+    resources:
+      type: object
+      description: Resource limits and requests
+      properties:
+        limits:
+          type: object
+          properties:
+            cpu:
+              type: string
+              default: "500m"
+            memory:
+              type: string
+              default: "512Mi"
+        requests:
+          type: object
+          properties:
+            cpu:
+              type: string
+              default: "100m"
+            memory:
+              type: string
+              default: "256Mi"
+
+---
+# Frontend Chart Values Schema
+frontend:
+  type: object
+  required:
+    - replicaCount
+    - image
+    - service
+    - probes
+  properties:
+    replicaCount:
+      type: integer
+      default: 2
+      description: Number of frontend pod replicas (must be 2 per constitution)
+
+    image:
+      type: object
+      required:
+        - repository
+        - tag
+      properties:
+        repository:
+          type: string
+          default: todo-frontend
+          description: Docker image repository
+        tag:
+          type: string
+          default: latest
+          description: Docker image tag
+        pullPolicy:
+          type: string
+          enum: [Always, IfNotPresent, Never]
+          default: IfNotPresent
+
+    service:
+      type: object
+      required:
+        - type
+        - port
+      properties:
+        type:
+          type: string
+          enum: [ClusterIP, NodePort, LoadBalancer]
+          default: NodePort
+        port:
+          type: integer
+          default: 3000
+        targetPort:
+          type: integer
+          default: 3000
+        nodePort:
+          type: integer
+          description: Optional fixed NodePort (30000-32767)
+
+    probes:
+      type: object
+      properties:
+        liveness:
+          type: object
+          properties:
+            path:
+              type: string
+              default: /
+            initialDelaySeconds:
+              type: integer
+              default: 15
+            periodSeconds:
+              type: integer
+              default: 30
+        readiness:
+          type: object
+          properties:
+            path:
+              type: string
+              default: /
+            initialDelaySeconds:
+              type: integer
+              default: 10
+            periodSeconds:
+              type: integer
+              default: 10
+
+    env:
+      type: object
+      description: Environment variables from ConfigMap
+      properties:
+        NEXT_PUBLIC_API_URL:
+          type: string
+          default: http://todo-backend:8000
+
+    resources:
+      type: object
+      description: Resource limits and requests
+      properties:
+        limits:
+          type: object
+          properties:
+            cpu:
+              type: string
+              default: "300m"
+            memory:
+              type: string
+              default: "256Mi"
+        requests:
+          type: object
+          properties:
+            cpu:
+              type: string
+              default: "100m"
+            memory:
+              type: string
+              default: "128Mi"
