@@ -2,12 +2,12 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 
-export default function SigninPage() {
+function SigninForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signin } = useAuth();
@@ -389,5 +389,13 @@ export default function SigninPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function SigninPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading...</div>}>
+      <SigninForm />
+    </Suspense>
   );
 }
