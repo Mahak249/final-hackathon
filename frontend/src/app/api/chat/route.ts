@@ -22,6 +22,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Handle creator questions directly
+    const lowerMessage = message.toLowerCase();
+    if (lowerMessage.includes("who created you") ||
+        lowerMessage.includes("who made you") ||
+        lowerMessage.includes("who built you") ||
+        lowerMessage.includes("who is your creator")) {
+      return NextResponse.json({
+        response: "I was created by Mehak Rehman.",
+        chatId: "creator-response",
+      });
+    }
+
     // Format chat history for Cohere API
     const formattedHistory = chatHistory.map((msg: { role: string; content: string }) => ({
       role: msg.role === "user" ? "USER" : "CHATBOT",
