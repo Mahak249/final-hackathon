@@ -1,11 +1,16 @@
 """Todo database model."""
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, TYPE_CHECKING
 
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from .user import User
+
+
+def utc_now() -> datetime:
+    """Return current UTC time."""
+    return datetime.now(timezone.utc)
 
 
 class Todo(SQLModel, table=True):
@@ -16,8 +21,8 @@ class Todo(SQLModel, table=True):
     title: str = Field(max_length=500)
     description: Optional[str] = Field(default=None, nullable=True)
     completed: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
     # Relationship to user
     user: "User" = Relationship(back_populates="todos")
