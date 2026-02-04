@@ -67,6 +67,7 @@ export default function ChatBot() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           message: userMessage.content,
           chatHistory,
