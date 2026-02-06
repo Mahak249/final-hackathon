@@ -74,11 +74,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Fall back to Cohere for general chat
-    if (!COHERE_API_KEY) {
-      return NextResponse.json(
-        { error: "Cohere API key not configured" },
-        { status: 500 }
-      );
+    if (!COHERE_API_KEY || COHERE_API_KEY === "your-cohere-api-key-here") {
+      // Fallback responses when no API key is configured
+      const fallbackResponses = [
+        "I'm TaskFlow AI! I can help you manage your tasks. Try saying 'add task', 'show my tasks', or 'delete task' to manage your todos.",
+        "Hello! I'm here to help with your task management. You can ask me to add, show, edit, or delete tasks.",
+        "Hi there! I'm your TaskFlow assistant. To manage tasks, try commands like 'add task Buy groceries' or 'show my tasks'.",
+        "I'm TaskFlow AI, your productivity helper! I can help you create, view, update, and delete tasks. What would you like to do?",
+      ];
+      const randomResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+      return NextResponse.json({
+        response: randomResponse,
+        chatId: "fallback-response",
+      });
     }
 
     // Format chat history for Cohere API
