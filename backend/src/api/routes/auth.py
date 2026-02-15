@@ -88,7 +88,7 @@ async def signout(
     """Sign out the current user."""
     response.delete_cookie(
         key="access_token",
-        httponly=True,
+        httponly=False,
         secure=False,
         samesite="lax",
     )
