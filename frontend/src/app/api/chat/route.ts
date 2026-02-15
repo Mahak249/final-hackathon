@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
 
     try {
