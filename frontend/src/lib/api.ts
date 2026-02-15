@@ -23,14 +23,14 @@ async function request<T>(
     "Content-Type": "application/json",
   };
 
-  if (requiresAuth) {
+  if (requiresAuth && typeof window !== "undefined") {
     // 1. Try Cookie
     const cookies = document.cookie.split(";");
     const authCookie = cookies.find((c) => c.trim().startsWith("access_token="));
     let token = authCookie ? authCookie.trim().split("=")[1] : null;
 
     // 2. Fallback to LocalStorage
-    if (!token && typeof window !== "undefined") {
+    if (!token) {
       token = localStorage.getItem("access_token");
     }
 
