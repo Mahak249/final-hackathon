@@ -1,15 +1,12 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 
-function SigninForm() {
+export default function SigninPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { signin } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,9 +15,10 @@ function SigninForm() {
   const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
-    const success = searchParams?.get("success");
+    const params = new URLSearchParams(window.location.search);
+    const success = params.get("success");
     if (success) setSuccessMessage(success);
-  }, [searchParams]);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -389,13 +387,5 @@ function SigninForm() {
         }
       `}</style>
     </div>
-  );
-}
-
-export default function SigninPage() {
-  return (
-    <Suspense fallback={<div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading...</div>}>
-      <SigninForm />
-    </Suspense>
   );
 }
