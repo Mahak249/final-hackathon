@@ -9,8 +9,8 @@ if TYPE_CHECKING:
 
 
 def utc_now() -> datetime:
-    """Return current UTC time."""
-    return datetime.now(timezone.utc)
+    """Return current UTC time (naive, for TIMESTAMP WITHOUT TIME ZONE columns)."""
+    return datetime.utcnow()
 
 
 class Todo(SQLModel, table=True):

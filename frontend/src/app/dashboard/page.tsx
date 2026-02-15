@@ -25,6 +25,13 @@ export default function DashboardPage() {
     loadTodos();
   }, []);
 
+  // Re-fetch todos when the chatbot mutates task data
+  useEffect(() => {
+    const handler = () => loadTodos();
+    window.addEventListener("taskflow:tasks-changed", handler);
+    return () => window.removeEventListener("taskflow:tasks-changed", handler);
+  }, []);
+
   async function loadTodos() {
     try {
       const data = await api.todos.list();

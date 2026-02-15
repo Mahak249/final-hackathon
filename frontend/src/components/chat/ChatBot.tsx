@@ -2,11 +2,30 @@
 
 import { useState, useRef, useEffect } from "react";
 
+interface ToolCall {
+  tool: string;
+  arguments: Record<string, unknown>;
+  result: { status: string; message?: string };
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  toolCalls?: ToolCall[];
+}
+
+// Map tool names to friendly labels
+function toolLabel(name: string): string {
+  const labels: Record<string, string> = {
+    add_task: "Created task",
+    delete_task: "Deleted task",
+    edit_task: "Updated task",
+    list_tasks: "Listed tasks",
+    toggle_task: "Toggled task",
+  };
+  return labels[name] || name;
 }
 
 export default function ChatBot() {
@@ -85,9 +104,15 @@ export default function ChatBot() {
         role: "assistant",
         content: data.response,
         timestamp: new Date(),
+        toolCalls: data.toolCalls?.length ? data.toolCalls : undefined,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+
+      // If the backend mutated task data, notify the dashboard to refresh
+      if (data.taskMutated) {
+        window.dispatchEvent(new CustomEvent("taskflow:tasks-changed"));
+      }
     } catch (error) {
       console.error("Chat error:", error);
       const errorMessage: Message = {
@@ -187,6 +212,17 @@ export default function ChatBot() {
                 )}
                 <div className="message-content">
                   <p>{message.content}</p>
+                  {/* Show tool calls as small badges */}
+                  {message.toolCalls && message.toolCalls.length > 0 && (
+                    <div className="tool-calls-info">
+                      {message.toolCalls.map((tc, i) => (
+                        <span key={i} className="tool-call-badge">
+                          {tc.result?.status === "success" ? "\u2713" : "\u2717"}{" "}
+                          {toolLabel(tc.tool)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <span className="message-time">
                     {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </span>
