@@ -81,10 +81,22 @@ export default function ChatBot() {
           content: m.content,
         }));
 
+      // Get auth token from cookie or localStorage
+      let token = "";
+      const cookies = document.cookie.split(";");
+      const authCookie = cookies.find((c) => c.trim().startsWith("access_token="));
+      if (authCookie) {
+        token = authCookie.trim().split("=")[1];
+      }
+      if (!token) {
+        token = localStorage.getItem("access_token") || "";
+      }
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         credentials: "include",
         body: JSON.stringify({
