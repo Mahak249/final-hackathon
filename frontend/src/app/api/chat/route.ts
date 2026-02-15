@@ -42,17 +42,29 @@ export async function POST(request: NextRequest) {
     const cookies = request.headers.get("cookie") || "";
     const authHeader = request.headers.get("authorization") || "";
 
+    // Extract token from Authorization header or cookie
+    let token = "";
+    if (authHeader.startsWith("Bearer ")) {
+      token = authHeader.slice(7);
+    }
+    if (!token) {
+      const cookiePairs = cookies.split(";");
+      const authCookie = cookiePairs.find((c) => c.trim().startsWith("access_token="));
+      if (authCookie) {
+        token = authCookie.trim().split("=")[1];
+      }
+    }
+
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      Cookie: cookies,
     };
-    if (authHeader) headers["Authorization"] = authHeader;
 
     try {
+      // Send token in request body since HF Spaces proxy strips Authorization headers
       const backendResponse = await fetch(`${BACKEND_URL}/chat/`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, token }),
       });
 
       if (backendResponse.ok) {
